@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 var imageLinks = []string{
@@ -12,9 +16,45 @@ var imageLinks = []string{
 	"https://golishi.ir/wp-content/uploads/2024/06/photo_2024-06-15_19-49-04-462x462.webp",
 }
 
+func downloadFile(url string, filepath string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("Link received")
 	for i, link := range imageLinks {
 		fmt.Printf("image number%d: %s\n", i+1, link)
 	}
+	for i, link := range imageLinks {
+
+		extension := filepath.Ext(link)
+		if extension == "" {
+			extension = ".webp"
+		}
+		filename := fmt.Sprintf("downloaded_image_%d%s", i+1, extension)
+
+		err := downloadFile(link, filename)
+		if err != nil {
+			fmt.Printf("Sorry for the photo download %d (%s): %v\n", i+1, link, err)
+		} else {
+			fmt.Printf("image %d Downloaded successfully: %s\n", i+1, filename)
+		}
+	}
+
 }
